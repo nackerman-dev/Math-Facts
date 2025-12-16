@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5-Minute Math Fact Practice</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #eef2f7, #d9e4f5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: white;
+      padding: 32px;
+      border-radius: 18px;
+      width: 460px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+      animation: fadeIn 0.4s ease-in-out;
+      text-align: center;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #2b3a55;
+      font-size: 26px;
+    }
+
+    .timer {
+      font-weight: 600;
+      color: #4a5d73;
+      margin-bottom: 10px;
+    }
+
+    .problem {
+      font-size: 20px;
+      margin: 20px 0;
+      color: #333;
+    }
+
+    input {
+      font-size: 18px;
+      padding: 10px;
+      width: 100%;
+      border-radius: 10px;
+      border: 2px solid #c9d6e8;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #5b8def;
+      box-shadow: 0 0 0 3px rgba(91,141,239,0.2);
+    }
+
+    button {
+      font-size: 16px;
+      padding: 10px;
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #submitBtn { background: #5b8def; color: white; }
+    #nextBtn { background: #7bc47f; color: white; }
+    button:hover { opacity: 0.92; }
+
+    .feedback {
+      min-height: 70px;
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #f6f8fc;
+      font-size: 16px;
+      color: #333;
+      text-align: center;
+    }
+
+    .star { font-size: 30px; color: gold; }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h1>Math Fact Challenge</h1>
+    <div class="timer" id="stats"></div>
+    <div class="problem" id="problem"></div>
+    <input type="number" id="answer" placeholder="Type your answer" />
+    <button onclick="checkAnswer()" id="submitBtn">Submit</button>
+    <button onclick="nextProblem()" id="nextBtn" style="display:none;">Next</button>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <script>
+    let timeLeft = 300;
+    let timer;
+    let correct = 0;
+    let total = 0;
+    let waiting = false;
+    let currentAnswer;
+    let currentExample;
+
+    function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+    const mathProblems = [
+      () => { let a=rand(1,12), b=rand(1,12); return { question:`${a} + ${b} = ?`, answer:a+b, example:`${a} + ${b} = ${a+b}` }; },
+      () => { let a=rand(10,99), b=rand(10,99); return { question:`${a} + ${b} = ?`, answer:a+b, example:`${a} + ${b} = ${a+b}` }; },
+      () => { let a=rand(1,12), b=rand(1,12); if(b>a)[a,b]=[b,a]; return { question:`${a} - ${b} = ?`, answer:a-b, example:`${a} - ${b} = ${a-b}` }; },
+      () => { let a=rand(10,99), b=rand(1,50); if(b>a)[a,b]=[b,a]; return { question:`${a} - ${b} = ?`, answer:a-b, example:`${a} - ${b} = ${a-b}` }; },
+      () => { let a=rand(1,12), b=rand(1,12); return { question:`${a} × ${b} = ?`, answer:a*b, example:`${a} × ${b} = ${a*b}` }; },
+      () => { let b=rand(1,12), q=rand(1,12); return { question:`${b*q} ÷ ${b} = ?`, answer:q, example:`${b*q} ÷ ${b} = ${q}` }; }
+    ];
+
+    window.onload = startPractice;
+
+    function startPractice(){
+      generateProblem();
+      updateStats();
+      timer=setInterval(()=>{
+        timeLeft--;
+        updateStats();
+        if(timeLeft<=0){
+          clearInterval(timer);
+          endPractice();
+        }
+      },1000);
+    }
+
+    function generateProblem(){
+      if(waiting) return;
+      const p=mathProblems[Math.floor(Math.random()*mathProblems.length)]();
+      currentAnswer=p.answer;
+      currentExample=p.example;
+      document.getElementById('problem').textContent=p.question;
+      document.getElementById('feedback').textContent='';
+      document.getElementById('answer').value='';
+      document.getElementById('answer').disabled=false;
+      document.getElementById('submitBtn').style.display='block';
+      document.getElementById('nextBtn').style.display='none';
+      document.getElementById('answer').focus();
+    }
+
+    function checkAnswer(){
+      if(waiting||timeLeft<=0) return;
+      const userAnswer=Number(document.getElementById('answer').value);
+      total++;
+      waiting=true;
+      document.getElementById('answer').disabled=true;
+      document.getElementById('submitBtn').style.display='none';
+      document.getElementById('nextBtn').style.display='block';
+      if(userAnswer===currentAnswer){ correct++; document.getElementById('feedback').innerHTML='<span class="star">⭐ Correct!</span>'; }
+      else{ document.getElementById('feedback').textContent=`Example: ${currentExample}`; }
+      updateStats();
+    }
+
+    function nextProblem(){ waiting=false; generateProblem(); }
+
+    function updateStats(){
+      let m=Math.floor(timeLeft/60), s=timeLeft%60;
+      document.getElementById('stats').textContent=`⏱ ${m}:${s.toString().padStart(2,'0')}   |   ⭐ ${correct}/${total}`;
+    }
+
+    function endPractice(){
+      document.getElementById('card').innerHTML=`
+        <h1>Time's up!</h1>
+        <p>Your final score: <strong>${correct}/${total}</strong></p>
+        <p>Quietly walk up to <strong>Mr. Ackerman</strong> and tell him your score.</p>
+      `;
+    }
+
+    document.getElementById('answer').addEventListener('keyup',function(e){
+      if(e.key==='Enter'){
+        if(document.getElementById('nextBtn').style.display==='block') nextProblem();
+        else checkAnswer();
+      }
+    });
+  </script>
+</body>
+</html>
